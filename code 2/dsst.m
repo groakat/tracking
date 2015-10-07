@@ -81,8 +81,18 @@ min_scale_factor = scale_step ^ ceil(log(max(5 ./ sz)) / log(scale_step));
 max_scale_factor = scale_step ^ floor(log(min([size(im,1) size(im,2)] ./ base_target_sz)) / log(scale_step));
 
 for frame = 1:num_frames,
+%     if frame == 1
+%         %load image
+%         im = imread([video_path img_files{frame}]);
+%     elseif frame > 31
+%         %load image
+%         im = imread([video_path img_files{frame - 30}]);
+%     end
+%     
+    
     %load image
     im = imread([video_path img_files{frame}]);
+            
 
     tic;
     
@@ -165,23 +175,39 @@ for frame = 1:num_frames,
     if visualization == 1
         rect_position = [pos([2,1]) - target_sz([2,1])/2, target_sz([2,1])];
         if frame == 1,  %first frame, create GUI
-            figure('Number','off', 'Name',['Tracker - ' video_path]);
+            figure('Name',['Tracker - ' video_path]);
             im_handle = imshow(uint8(im), 'Border','tight', 'InitialMag', 100 + 100 * (length(im) < 500));
             rect_handle = rectangle('Position',rect_position, 'EdgeColor','g');
             text_handle = text(10, 10, int2str(frame));
             set(text_handle, 'color', [0 1 1]);
+            figure('Name', 'hf_num');
+            hf_num_handles = cell(30);
+            subplot(5,6,1);
+            hf_num_handles{1} = imshow(uint8((xl(:,:,1) + 0.5) * 255), 'Border','tight');
+            for i= 2:28
+                subplot(5,6,i);
+                hf_num_handles{i} = imshow(uint8((real(ifft2(new_hf_num(:,:,i-1)))) * 255), 'Border','tight');
+            end
+            subplot(5,6,29);
+            hf_num_handles{29} = imshow(uint8((xl(:,:,1) + 0.5) * 255), 'Border','tight');
+            
         else
             try  %subsequent frames, update GUI
                 set(im_handle, 'CData', im)
                 set(rect_handle, 'Position', rect_position)
                 set(text_handle, 'string', int2str(frame));
+                set(hf_num_handles{1}, 'CData', uint8((xl(:,:,1) + 0.5) * 255))                
+                for i= 2:28
+                    set(hf_num_handles{i}, 'CData', uint8((real(ifft2(new_hf_num(:,:,i-1)))) * 255))
+                end
+                set(hf_num_handles{29}, 'CData', uint8(response * 255))   
             catch
                 return
             end
         end
         
         drawnow
-%         pause
+        pause
     end
 end
 
