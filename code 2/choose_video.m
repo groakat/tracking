@@ -11,7 +11,7 @@ contents = dir(base_path);
 names = {};
 for k = 1:numel(contents),
     name = contents(k).name;
-    if isdir([base_path name]) && ~strcmp(name, '.') && ~strcmp(name, '..'),
+    if isdir([base_path name]) && ~strcmp(name, '.') && ~strcmp(name, '..'), % check whether current directory item is a folder
         names{end+1} = name;  %#ok
     end
 end

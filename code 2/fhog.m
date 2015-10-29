@@ -65,10 +65,18 @@ if( nargin<3 ), nOrients=9; end
 if( nargin<4 ), clip=.2; end
 if( nargin<5 ), crop=0; end
 
-softBin = -1; useHog = 2; b = binSize;
-
+softBin = -1; useHog = 2; b = binSize;  
+%channel=0; full = 1; *d=(nDims==2) ? 1 : dims[2];  d is the length of the 3rd
+%dimension, if it exists
+%channel probably selects one of the 3 color channels if not 0 in which
+%case we use all three
+% [M,O] = gradMag( I, channel, full ) - see gradientMag.m
 [M,O]=gradientMex('gradientMag',I,0,1);
 
+
+%useHog = 0 calculates just the gradient histogram, 
+%useHog = 1 calculates the original HOG version with the block %normalisation
+%useHog = 2 calculates the PDM version of HOG, 
 H = gradientMex('gradientHist',M,O,binSize,nOrients,softBin,useHog,clip);
 
 if( crop ), e=mod(size(I),b)<b/2; H=H(2:end-e(1),2:end-e(2),:); end

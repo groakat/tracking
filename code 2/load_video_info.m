@@ -15,11 +15,27 @@ ground_truth = textscan(f, '%f,%f,%f,%f');  %[x, y, width, height]
 ground_truth = cat(2, ground_truth{:});
 fclose(f);
 
+%check annotations for errors
+if(sum((ground_truth(:,3))<0))
+    index= find(ground_truth(:,3)<0);
+    disp(['sth is very wrong with your data. Negative width at line: ' num2str(index(1))]);
+end
+if(sum((ground_truth(:,4))<0))
+    index= find(ground_truth(:,4)<0);
+    disp(['sth is very wrong with your data. Negative height at line: ' num2str(index(1))]);
+end
+
 %set initial position and size
 target_sz = [ground_truth(1,4), ground_truth(1,3)];
 pos = [ground_truth(1,2), ground_truth(1,1)];
+%ground truth is center and dimensions of bounding box
+ground_truth = [ground_truth(:,[2,1]) + (ground_truth(:,[4,3]) - 1) / 2 , ground_truth(:,[4,3])];  
 
-ground_truth = [ground_truth(:,[2,1]) + (ground_truth(:,[4,3]) - 1) / 2 , ground_truth(:,[4,3])];
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%for some reason we have a missing ground truth for the last frame
+%%%%%%%%%%%%%%!!!!!!!!!!!!!!!!!!!! TEMPORARY FIX!!%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ground_truth(end+1,:)=ground_truth(end,:);
 
 %see if they are in the 'imgs' subfolder or not
 if exist([video_path num2str(frames{1}, 'imgs/img%05i.png')], 'file'),
