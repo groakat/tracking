@@ -184,12 +184,17 @@ for frame = 1:num_frames,
             hf_num_handles = cell(30);
             subplot(5,6,1);
             hf_num_handles{1} = imshow(uint8((xl(:,:,1) + 0.5) * 255), 'Border','tight');
-            for i= 2:28
+            
+            curFilterFourier = bsxfun(@times, conj(new_hf_num),1./new_hf_den);
+            for i= 2:29
                 subplot(5,6,i);
-                hf_num_handles{i} = imshow(uint8((real(ifft2(new_hf_num(:,:,i-1)))) * 255), 'Border','tight');
+                tmp = real(ifft2(curFilterFourier(:,:,i-1)));
+                tmp=tmp/min(tmp(:));
+                set(hf_num_handles{i}, 'CData', fftshift(uint8( tmp* 255)))
+                hf_num_handles{i} = imshow(fftshift(uint8(tmp * 255)), 'Border','tight');
             end
-            subplot(5,6,29);
-            hf_num_handles{29} = imshow(uint8((xl(:,:,1) + 0.5) * 255), 'Border','tight');
+            subplot(5,6,30);
+            hf_num_handles{30} = imshow(uint8((xl(:,:,1) + 0.5) * 255), 'Border','tight');
             
         else
             try  %subsequent frames, update GUI
@@ -197,10 +202,13 @@ for frame = 1:num_frames,
                 set(rect_handle, 'Position', rect_position)
                 set(text_handle, 'string', int2str(frame));
                 set(hf_num_handles{1}, 'CData', uint8((xl(:,:,1) + 0.5) * 255))                
-                for i= 2:28
-                    set(hf_num_handles{i}, 'CData', uint8((real(ifft2(new_hf_num(:,:,i-1)))) * 255))
+                curFilterFourier = bsxfun(@times, conj(new_hf_num),1./new_hf_den);
+                for i= 2:29                    
+                    tmp = real(ifft2(curFilterFourier(:,:,i-1)));
+                    tmp=tmp/min(tmp(:));
+                    set(hf_num_handles{i}, 'CData', fftshift(uint8( tmp* 255)))
                 end
-                set(hf_num_handles{29}, 'CData', uint8(response * 255))   
+                set(hf_num_handles{30}, 'CData', uint8(response * 255))   
             catch
                 return
             end
