@@ -201,6 +201,23 @@ function [positions, fps] = dsst(params,ground_truth)
                 textScale_handle = text(10, 50, ['currentScale: ' num2str(currentScaleFactor)]);
                 set(text_handle, 'color', [0 1 1]);
                 set(textScale_handle, 'color', [0 1 1]);
+                
+                figure('Name', 'hf_num');
+                hf_num_handles = cell(30);
+                subplot(5,6,1);
+                hf_num_handles{1} = imshow(uint8((xl(:,:,1) + 0.5) * 255), 'Border','tight');
+
+                curFilterFourier = bsxfun(@times, conj(new_hf_num),1./new_hf_den);
+                for i= 2:29
+                    subplot(5,6,i);
+                    tmp = real(ifft2(curFilterFourier(:,:,i-1)));
+                    tmp=tmp/min(tmp(:));
+                    set(hf_num_handles{i}, 'CData', fftshift(uint8( tmp* 255)))
+                    hf_num_handles{i} = imshow(fftshift(uint8(tmp * 255)), 'Border','tight');
+                end
+                subplot(5,6,30);
+                hf_num_handles{30} = imshow(uint8((xl(:,:,1) + 0.5) * 255), 'Border','tight');
+                
             else
                 try  %subsequent frames, update GUI
                     set(im_handle, 'CData', im)
@@ -211,6 +228,15 @@ function [positions, fps] = dsst(params,ground_truth)
                     set(rect_gt_handle, 'Position', groundTruthForDrawings(frame,:))
                     set(text_handle, 'string', ['current frame: ' int2str(frame)]);
                     set(textScale_handle, 'string', ['currentScale: ' num2str(currentScaleFactor)]);
+                    
+                    set(hf_num_handles{1}, 'CData', uint8((xl(:,:,1) + 0.5) * 255))                
+                    curFilterFourier = bsxfun(@times, conj(new_hf_num),1./new_hf_den);
+                    for i= 2:29                    
+                        tmp = real(ifft2(curFilterFourier(:,:,i-1)));
+                        tmp=tmp/min(tmp(:));
+                        set(hf_num_handles{i}, 'CData', fftshift(uint8( tmp* 255)))
+                    end
+                    set(hf_num_handles{30}, 'CData', uint8(response * 255))   
                 catch
                     return
                 end
@@ -233,4 +259,3 @@ function [positions, fps] = dsst(params,ground_truth)
     fps = num_frames/time;
 end
 
-    
