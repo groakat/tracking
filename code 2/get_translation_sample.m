@@ -35,8 +35,10 @@ im_patch = im(ys, xs, :);
 % resize image to model size
 im_patch = mexResize(im_patch, model_sz, 'auto');
 
-figure(4)
+fig4H = figure(4);
+%set(im_handle, 'CData', im)
 imshow(im_patch)
+%set(fig4H,'Position',[1500 700]);
 
 % compute feature map
 out = get_feature_map(im_patch);

@@ -88,13 +88,20 @@ function [positions, fps] = dsst(params,ground_truth)
     curImSize = curImSize(1:2);
     initImSize = curImSize;
     
+    fig4H = figure(4);
+    set(fig4H,'Position',[1500 700 50 50]);
+    fig5H = figure(5);
+    set(fig5H,'OuterPosition',[800 500 700 200]);
+  
+    
     for frame = 1:num_frames
         %load image
         %im = imread([video_path img_files{frame}]);
-        pause
+        %pause
         tic;
         
         if frame > 1
+%             im = im(:,[20:end,1:19],:); %move image to the right
             
             newCurImSize = curImSize/1.0005;
             rectIm = [ceil(curImSize/2-newCurImSize/2), floor(curImSize/2+newCurImSize/2)];
@@ -122,18 +129,23 @@ function [positions, fps] = dsst(params,ground_truth)
             xsf = fft(xs,[],2);
             scale_response = real(ifft(sum(sf_num .* xsf, 1) ./ (sf_den + lambda)));
             
-            imScaleResponse = scale_response(floor(1:0.25:length(scale_response)+3*.025));
-            imScaleResponse = repmat(imScaleResponse',1,40);
-            figure(5)
-            imshow(imScaleResponse);
+            imScaleResponse = scale_response(floor(1:0.25:nScales+3*.025));
+%             imScaleResponse = repmat(imScaleResponse',1,40);
+            fig5H=figure(5);
+%             imshow(imScaleResponse);
+            plot(1:length(imScaleResponse), imScaleResponse, '-g');
             hold on
-            plot(1:40, (17*4-1.5)*ones(1,40),'g-','LineWidth',3)
-
+%             plot(1:40, (17*4-1.5)*ones(1,40),'g-','LineWidth',3)
+            tmpLine = 0:0.05:2;%max(scale_response);
+            plot((ceil(nScales/2.0)*4-1.5)*ones(1,length(tmpLine)), tmpLine,'b-');
+            
             % find the maximum scale response
             recovered_scale = find(scale_response == max(scale_response(:)), 1);
-            plot(1:40, (4*recovered_scale-1.5)*ones(1,40),'r-')
+            %plot((recovered_scale*4-1.5)*ones(1,length(tmpLine)), tmpLine,'r-');
+            plot(recovered_scale*4-1.5, scale_response(recovered_scale),'r.','MarkerSize',10);
+            hold off
             
-
+            
             % update the scale
             currentScaleFactor = currentScaleFactor * scaleFactors(recovered_scale);
             if currentScaleFactor < min_scale_factor
@@ -202,7 +214,7 @@ function [positions, fps] = dsst(params,ground_truth)
                 set(text_handle, 'color', [0 1 1]);
                 set(textScale_handle, 'color', [0 1 1]);
                 
-                figure('Name', 'hf_num');
+                filterFig_handle=figure('Name', 'hf_num');
                 hf_num_handles = cell(30);
                 subplot(5,6,1);
                 hf_num_handles{1} = imshow(uint8((xl(:,:,1) + 0.5) * 255), 'Border','tight');
@@ -218,6 +230,8 @@ function [positions, fps] = dsst(params,ground_truth)
                 subplot(5,6,30);
                 hf_num_handles{30} = imshow(uint8((xl(:,:,1) + 0.5) * 255), 'Border','tight');
                 
+                set(fig_handle,'OuterPosition',[1 1 500 400]);
+                set(filterFig_handle,'OuterPosition',[1 501 800 600]);                
             else
                 try  %subsequent frames, update GUI
                     set(im_handle, 'CData', im)
@@ -258,4 +272,5 @@ function [positions, fps] = dsst(params,ground_truth)
 
     fps = num_frames/time;
 end
+
 

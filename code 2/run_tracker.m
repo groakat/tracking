@@ -6,10 +6,10 @@ close all;
 
 %choose the path to the videos (you'll be able to choose one with the GUI)
 %base_path = 'sequences/';
-base_path = '/home/stratos/Documents/FutsalData/FirstHalf400frames/seq1/CAM6';
+base_path = '/home/stratos/Documents/FutsalData/FirstHalf400frames/seq1/CAM4';
 
 %parameters according to the paper
-params.padding = 1.0;         			% extra area surrounding the target
+params.padding = 0.3;         			% extra area surrounding the target
 params.output_sigma_factor = 1/16;		% standard deviation for the desired translation filter output
 params.scale_sigma_factor = 1/4;        % standard deviation for the desired scale filter output
 params.lambda = 1e-2;					% regularization weight (denoted "lambda" in the paper)
