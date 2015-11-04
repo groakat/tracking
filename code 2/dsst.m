@@ -1,98 +1,11 @@
 function [positions, fps] = dsst(params,ground_truth)
 
     % [positions, fps] = dsst(params)
-
-    % parameters
-    padding = params.padding;                         	%extra area surrounding the target
-    output_sigma_factor = params.output_sigma_factor;	%spatial bandwidth (proportional to target)
-    lambda = params.lambda;
-    learning_rate = params.learning_rate;
-    nScales = params.number_of_scales;
-    scale_step = params.scale_step;
-    scale_sigma_factor = params.scale_sigma_factor;
-    scale_model_max_area = params.scale_model_max_area;
-
-    video_path = params.video_path;
-    img_files = params.img_files;
-    pos = floor(params.init_pos);
-    target_sz = floor(params.wsize);
-
-    visualization = params.visualization;
-
-    num_frames = numel(img_files);
-
-    init_target_sz = target_sz;
-
-    % target size att scale = 1
-    base_target_sz = target_sz;
-
-    % window size, taking padding into account
-    sz = floor(base_target_sz * (1 + padding));
-
-    % desired translation filter output (gaussian shaped), bandwidth
-    % proportional to target size
-    output_sigma = sqrt(prod(base_target_sz)) * output_sigma_factor;
-    [rs, cs] = ndgrid((1:sz(1)) - floor(sz(1)/2), (1:sz(2)) - floor(sz(2)/2));
-    y = exp(-0.5 * (((rs.^2 + cs.^2) / output_sigma^2)));
-    yf = single(fft2(y));
-
-
-    % desired scale filter output (gaussian shaped), bandwidth proportional to
-    % number of scales
-    scale_sigma = nScales/sqrt(33) * scale_sigma_factor;
-    ss = (1:nScales) - ceil(nScales/2);
-    ys = exp(-0.5 * (ss.^2) / scale_sigma^2);
-    ysf = single(fft(ys));
-
-    % store pre-computed translation filter cosine window
-    cos_window = single(hann(sz(1)) * hann(sz(2))');
-
-    % store pre-computed scale filter cosine window
-    if mod(nScales,2) == 0
-        scale_window = single(hann(nScales+1));
-        scale_window = scale_window(2:end);         % probably does that to get the maximum factor of the hann window
-    else
-        scale_window = single(hann(nScales));
-    end;
-    %%%stratos change
-    %scale_window=ones(1,nScales);%sqrt(sqrt(scale_window));
-
-    % scale factors
-    ss = 1:nScales;
-    scaleFactors = scale_step.^(ceil(nScales/2) - ss);
-
-    % compute the resize dimensions used for feature extraction in the scale
-    % estimation
-    scale_model_factor = 1;
-    if prod(init_target_sz) > scale_model_max_area
-        scale_model_factor = sqrt(scale_model_max_area/prod(init_target_sz));
-    end
-    scale_model_sz = floor(init_target_sz * scale_model_factor);
-
-    currentScaleFactor = 1;
-
-    % to calculate precision
-    positions = zeros(numel(img_files), 4);
-
-    % to calculate FPS
-    time = 0;
-
-    % find maximum and minimum scales
-    im = imread([video_path img_files{1}]);
-    min_scale_factor = scale_step ^ ceil(log(max(5 ./ sz)) / log(scale_step));   %5 is probably the minimum for height and width of the window
-    max_scale_factor = scale_step ^ floor(log(min([size(im,1) size(im,2)] ./ base_target_sz)) / log(scale_step));
-
     
-    %stratos test
-    curImSize = size(im);
-    curImSize = curImSize(1:2);
-    initImSize = curImSize;
     
-    fig4H = figure(4);
-    set(fig4H,'Position',[1500 700 50 50]);
-    fig5H = figure(5);
-    set(fig5H,'OuterPosition',[800 500 700 200]);
-  
+    status_object = dsst_initialize(params,ground_truth);
+    
+    
     
     for frame = 1:num_frames
         %load image
@@ -273,4 +186,110 @@ function [positions, fps] = dsst(params,ground_truth)
     fps = num_frames/time;
 end
 
+
+function status_object = dsst_initialize(params,ground_truth)
+    % parameters
+    padding = params.padding;                         	%extra area surrounding the target
+    output_sigma_factor = params.output_sigma_factor;	%spatial bandwidth (proportional to target)
+    lambda = params.lambda;
+    learning_rate = params.learning_rate;
+    nScales = params.number_of_scales;
+    scale_step = params.scale_step;
+    scale_sigma_factor = params.scale_sigma_factor;
+    scale_model_max_area = params.scale_model_max_area;
+
+    video_path = params.video_path;
+    img_files = params.img_files;
+    pos = floor(params.init_pos);
+    target_sz = floor(params.wsize);
+
+    visualization = params.visualization;
+
+    num_frames = numel(img_files);
+
+    init_target_sz = target_sz;
+
+    % target size att scale = 1
+    base_target_sz = target_sz;
+
+    % window size, taking padding into account
+    sz = floor(base_target_sz * (1 + padding));
+
+    % desired translation filter output (gaussian shaped), bandwidth
+    % proportional to target size
+    output_sigma = sqrt(prod(base_target_sz)) * output_sigma_factor;
+    [rs, cs] = ndgrid((1:sz(1)) - floor(sz(1)/2), (1:sz(2)) - floor(sz(2)/2));
+    y = exp(-0.5 * (((rs.^2 + cs.^2) / output_sigma^2)));
+    yf = single(fft2(y));
+
+
+    % desired scale filter output (gaussian shaped), bandwidth proportional to
+    % number of scales
+    scale_sigma = nScales/sqrt(33) * scale_sigma_factor;
+    ss = (1:nScales) - ceil(nScales/2);
+    ys = exp(-0.5 * (ss.^2) / scale_sigma^2);
+    ysf = single(fft(ys));
+
+    % store pre-computed translation filter cosine window
+    cos_window = single(hann(sz(1)) * hann(sz(2))');
+
+    % store pre-computed scale filter cosine window
+    if mod(nScales,2) == 0
+        scale_window = single(hann(nScales+1));
+        scale_window = scale_window(2:end);         % probably does that to get the maximum factor of the hann window
+    else
+        scale_window = single(hann(nScales));
+    end;
+    %%%stratos change
+    %scale_window=ones(1,nScales);%sqrt(sqrt(scale_window));
+
+    % scale factors
+    ss = 1:nScales;
+    scaleFactors = scale_step.^(ceil(nScales/2) - ss);
+
+    % compute the resize dimensions used for feature extraction in the scale
+    % estimation
+    scale_model_factor = 1;
+    if prod(init_target_sz) > scale_model_max_area
+        scale_model_factor = sqrt(scale_model_max_area/prod(init_target_sz));
+    end
+    scale_model_sz = floor(init_target_sz * scale_model_factor);
+
+    currentScaleFactor = 1;
+
+    % to calculate precision
+    positions = zeros(numel(img_files), 4);
+
+    % to calculate FPS
+    time = 0;
+
+    % find maximum and minimum scales
+    im = imread([video_path img_files{1}]);
+    min_scale_factor = scale_step ^ ceil(log(max(5 ./ sz)) / log(scale_step));   %5 is probably the minimum for height and width of the window
+    max_scale_factor = scale_step ^ floor(log(min([size(im,1) size(im,2)] ./ base_target_sz)) / log(scale_step));
+
+    
+    %stratos test
+    curImSize = size(im);
+    curImSize = curImSize(1:2);
+    initImSize = curImSize;
+    
+    fig4H = figure(4);
+    set(fig4H,'Position',[1500 700 50 50]);
+    fig5H = figure(5);
+    set(fig5H,'OuterPosition',[800 500 700 200]);
+    
+    
+    
+    status_object.time = time;
+
+
+end
+
+
+function dsst_update()
+
+
+
+end
 
