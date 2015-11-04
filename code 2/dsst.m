@@ -9,11 +9,11 @@ function [positions, fps] = dsst(params,ground_truth)
     status_object = dsst_initialize(params,im,groundTruthForDrawings(1,:));
     
     
-    for frame = 1:num_frames
+    for frame = 2:num_frames
         %load image
         im = imread([params.video_path params.img_files{frame}]);
         %pause
-               
+        status_object.frame = frame;       
         status_object = dsst_update(params,im,status_object,groundTruthForDrawings(frame,:));
         
     end
@@ -123,9 +123,9 @@ function status_object = dsst_initialize(params,im,ground_truth)
 
     sf_den = new_sf_den;
     sf_num = new_sf_num;
-
-     % calculate the new target size
-    target_sz = floor(base_target_sz * currentScaleFactor);
+% 
+%      % calculate the new target size
+%     target_sz = floor(base_target_sz * currentScaleFactor);
 
     %ground_truth = [ground_truth(:,[2,1]) + (ground_truth(:,[4,3]) - 1) / 2 , ground_truth(:,[4,3])];
 %     groundTruthForDrawings = [ground_truth(:,[2,1])-(ground_truth(:,[4,3]) - 1) / 2,ground_truth(:,[4,3])];
@@ -136,22 +136,24 @@ function status_object = dsst_initialize(params,im,ground_truth)
     status_object.positions = zeros(numel(img_files), 4);
     
     status_object.pos = pos;
+    status_object.currentScaleFactor=currentScaleFactor;
+    status_object.hf_den=hf_den; 
+    status_object.hf_num=hf_num;      
+    status_object.sf_den=sf_den;      
+    status_object.sf_num=sf_num; 
+    
     status_object.yf=yf;       
     status_object.ysf=ysf;      
     status_object.cos_window=cos_window;
     status_object.scale_window=scale_window;      
     status_object.scaleFactors=scaleFactors;
-    status_object.scale_model_sz=scale_model_sz;
-    status_object.currentScaleFactor=currentScaleFactor;
+    status_object.scale_model_sz=scale_model_sz;    
+    status_object.base_target_sz=base_target_sz;
+    status_object.sz=sz; 
     status_object.min_scale_factor=min_scale_factor;
     status_object.max_scale_factor=max_scale_factor;
-    status_object.hf_den=hf_den; 
-    status_object.hf_den=hf_num;      
-    status_object.hf_den=sf_den;      
-    status_object.hf_den=sf_num;  
-    status_object.hf_den=target_sz;
+     
   
-    
     
     if visualization == 1
         rect_position = [pos([2,1]) - target_sz([2,1])/2, target_sz([2,1])];
@@ -163,7 +165,7 @@ function status_object = dsst_initialize(params,im,ground_truth)
         %ground truth drawing, for comparison only          
         rect_gt_handle = rectangle('Position',ground_truth, 'EdgeColor','r');
 
-        text_handle = text(10, 10, ['current frame: ' int2str(frame)]);
+        text_handle = text(10, 10, ['current frame: ' int2str(1)]);
         textScale_handle = text(10, 50, ['currentScale: ' num2str(currentScaleFactor)]);
         set(text_handle, 'color', [0 1 1]);
         set(textScale_handle, 'color', [0 1 1]);
@@ -213,21 +215,24 @@ function status_object = dsst_update(params,im,status_object,ground_truth)
 
     visualization = params.visualization;
     
+    pos=status_object.pos;     
+    currentScaleFactor=status_object.currentScaleFactor; 
+    hf_den=status_object.hf_den; 
+    hf_num=status_object.hf_num; 
+    sf_den=status_object.sf_den; 
+    sf_num=status_object.sf_num; 
+    
     yf=status_object.yf;
     ysf=status_object.ysf;
     cos_window=status_object.cos_window; 
     scale_window=status_object.scale_window; 
     scaleFactors=status_object.scaleFactors; 
     scale_model_sz=status_object.scale_model_sz; 
-    currentScaleFactor=status_object.currentScaleFactor; 
-    pos=status_object.pos; 
+    base_target_sz=status_object.base_target_sz;
+    sz=status_object.sz;     
     min_scale_factor=status_object.min_scale_factor; 
     max_scale_factor=status_object.max_scale_factor;      
-    hf_den=status_object.hf_den; 
-    hf_num=status_object.hf_num; 
-    sf_den=status_object.sf_den; 
-    sf_num=status_object.sf_num; 
-    target_sz=status_object.target_sz;    
+    
 
     tic;    
     % extract the test sample feature map for the translation filter
@@ -287,26 +292,25 @@ function status_object = dsst_update(params,im,status_object,ground_truth)
     target_sz = floor(base_target_sz * currentScaleFactor);
 
     %save position
-    status.objects.positions(frame,:) = [pos target_sz];
+    status_object.positions(status_object.frame,:) = [pos target_sz];
+    status_object.time = status_object.time + toc;
 
     status_object.pos = pos;
-    status_object.yf=yf;       
-    status_object.ysf=ysf;      
-    status_object.cos_window=cos_window;
-    status_object.scale_window=scale_window;      
-    status_object.scaleFactors=scaleFactors;
-    status_object.scale_model_sz=scale_model_sz;
     status_object.currentScaleFactor=currentScaleFactor;
-    status_object.min_scale_factor=min_scale_factor;
-    status_object.max_scale_factor=max_scale_factor;
     status_object.hf_den=hf_den; 
-    status_object.hf_den=hf_num;      
-    status_object.hf_den=sf_den;      
-    status_object.hf_den=sf_num;  
-    status_object.hf_den=target_sz;
-
-    %ground_truth = [ground_truth(:,[2,1]) + (ground_truth(:,[4,3]) - 1) / 2 , ground_truth(:,[4,3])];
-%     groundTruthForDrawings = [ground_truth(:,[2,1])-(ground_truth(:,[4,3]) - 1) / 2,ground_truth(:,[4,3])];
+    status_object.hf_num=hf_num;      
+    status_object.sf_den=sf_den;      
+    status_object.sf_num=sf_num; 
+    
+%     status_object.yf=yf;       
+%     status_object.ysf=ysf;      
+%     status_object.cos_window=cos_window;
+%     status_object.scale_window=scale_window;      
+%     status_object.scaleFactors=scaleFactors;
+%     status_object.scale_model_sz=scale_model_sz;    
+%     status_object.sz=sz; 
+%     status_object.min_scale_factor=min_scale_factor;
+%     status_object.max_scale_factor=max_scale_factor;
 
     %visualization
     if visualization == 1
@@ -318,7 +322,7 @@ function status_object = dsst_update(params,im,status_object,ground_truth)
             set(status_object.rect_handle, 'Position', rect_position)
             %ground truth drawing, for comparison only
             set(status_object.rect_gt_handle, 'Position', ground_truth)
-            set(status_object.text_handle, 'string', ['current frame: ' int2str(frame)]);
+            set(status_object.text_handle, 'string', ['current frame: ' int2str(status_object.frame)]);
             set(status_object.textScale_handle, 'string', ['currentScale: ' num2str(currentScaleFactor)]);
 
         catch
